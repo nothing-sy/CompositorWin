@@ -1,0 +1,9 @@
+bin/
+obj/
+dist/
+publish/
+*.user
+.vs/
+.code-review-graph/
+TestResults/
+*.comp/QuickLook/

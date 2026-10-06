@@ -1,0 +1,302 @@
+﻿<Window x:Class="CompositorWin.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="未命名 — CompositorWin"
+        Height="900" Width="1280" MinWidth="800" MinHeight="520"
+        Background="{StaticResource Bg0}"
+        Foreground="{StaticResource Fg}"
+        WindowStartupLocation="CenterScreen"
+        AllowDrop="True"
+        DragOver="Window_DragOver"
+        Drop="Window_Drop"
+        KeyDown="Window_KeyDown"
+        ToolTipService.InitialShowDelay="200"
+        ToolTipService.ShowDuration="20000">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" Height="28">
+            <MenuItem Header="文件">
+                <MenuItem Header="新建画布…" InputGestureText="Ctrl+N" Click="New_Click"/>
+                <MenuItem Header="打开…" InputGestureText="Ctrl+O" Click="Open_Click"/>
+                <MenuItem Header="保存" InputGestureText="Ctrl+S" Click="Save_Click"/>
+                <Separator/>
+                <MenuItem Header="置入嵌入对象…" Click="Import_Click"/>
+                <MenuItem Header="导入 PSD…" Click="ImportPsd_Click"/>
+                <MenuItem Header="导出为 JPEG…" InputGestureText="Ctrl+Alt+Shift+S" Click="ExportJpg_Click"/>
+                <MenuItem Header="导出为 PNG…" Click="ExportPng_Click"/>
+                <Separator/>
+                <MenuItem Header="退出" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="编辑">
+                <MenuItem Header="键盘快捷键…"/>
+            </MenuItem>
+            <MenuItem Header="图像">
+                <MenuItem Header="画布大小…" Click="CanvasSize_Click"/>
+                <MenuItem Header="图像大小…" Click="ImageSize_Click"/>
+                <MenuItem Header="裁剪" Click="Crop_Click"/>
+            </MenuItem>
+            <MenuItem Header="图层">
+                <MenuItem Header="新建空白图层" Click="BlankLayer_Click"/>
+                <MenuItem Header="编组图层" Click="Group_Click"/>
+                <MenuItem Header="创建剪贴蒙版" Click="Clip_Click"/>
+                <MenuItem Header="删除图层" Click="DeleteLayer_Click"/>
+                <Separator/>
+                <MenuItem Header="图层样式">
+                    <MenuItem Header="投影…" Click="Shadow_Click"/>
+                    <MenuItem Header="描边…" Click="Stroke_Click"/>
+                    <MenuItem Header="颜色叠加…" Click="Overlay_Click"/>
+                </MenuItem>
+                <MenuItem Header="新建调整图层">
+                    <MenuItem Header="色相/饱和度" Click="HueSat_Click"/>
+                    <MenuItem Header="色阶" Click="Levels_Click"/>
+                    <MenuItem Header="曲线" Click="Curves_Click"/>
+                    <MenuItem Header="曝光" Click="Exposure_Click"/>
+                    <MenuItem Header="黑白" Click="Bw_Click"/>
+                    <MenuItem Header="色彩平衡" Click="Balance_Click"/>
+                    <MenuItem Header="反相" Click="Invert_Click"/>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="选择">
+                <MenuItem Header="取消选择" Click="Deselect_Click"/>
+                <MenuItem Header="内容识别填充" Click="Fill_Click"/>
+            </MenuItem>
+            <MenuItem Header="滤镜">
+                <MenuItem Header="Camera Raw 滤镜…" Click="Raw_Click"/>
+                <MenuItem Header="移去背景" Click="RemoveBg_Click"/>
+            </MenuItem>
+            <MenuItem Header="视图">
+                <MenuItem Header="标尺" InputGestureText="Ctrl+R" Click="Rulers_Click"/>
+                <MenuItem Header="适合屏幕" InputGestureText="Ctrl+0" Click="Fit_Click"/>
+                <MenuItem Header="100%" InputGestureText="Ctrl+1" Click="Actual_Click"/>
+                <Separator/>
+                <MenuItem Header="新建参考线（垂直）" Click="GuideV_Click"/>
+                <MenuItem Header="新建参考线（水平）" Click="GuideH_Click"/>
+            </MenuItem>
+            <MenuItem Header="窗口">
+                <MenuItem Header="图层" IsCheckable="True" IsChecked="True"/>
+            </MenuItem>
+        </Menu>
+
+        <Border DockPanel.Dock="Top" Height="44" Background="{StaticResource Bg0}" BorderBrush="{StaticResource Hairline}" BorderThickness="0,0,0,1">
+            <DockPanel Margin="8,0">
+                <Button DockPanel.Dock="Left" Content="＋" Width="32" Height="30" FontSize="16" Click="New_Click" ToolTip="新建画布 (Ctrl+N)"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource QuietButton}" Content="适合" Click="Fit_Click" ToolTip="适合屏幕 (Ctrl+0)" Margin="0,0,4,0"/>
+                    <Button Style="{StaticResource QuietButton}" Content="100%" Click="Actual_Click" ToolTip="实际像素 (Ctrl+1)" Margin="0,0,4,0"/>
+                    <Button Style="{StaticResource QuietButton}" Content="＋" Click="ZoomIn_Click" ToolTip="放大 (Ctrl++)" Margin="0,0,4,0"/>
+                    <Button Style="{StaticResource QuietButton}" Content="－" Click="ZoomOut_Click" ToolTip="缩小 (Ctrl+-)"/>
+                </StackPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
+                    <StackPanel Name="TabStrip" Orientation="Horizontal" VerticalAlignment="Center"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <Border DockPanel.Dock="Top" Name="ToolHeader" Height="46" Background="#FF262626" BorderBrush="{StaticResource Hairline}" BorderThickness="0,0,0,1">
+            <Grid Margin="18,0">
+                <StackPanel Name="HeaderMove" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="移动 / 变换" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock Text="X" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox Name="PosXBox" Width="56" Height="22" LostFocus="TransformBox_LostFocus"/>
+                    <TextBlock Text="Y" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="12,0,6,0"/>
+                    <TextBox Name="PosYBox" Width="56" Height="22" LostFocus="TransformBox_LostFocus"/>
+                    <TextBlock Text="宽" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="12,0,6,0"/>
+                    <TextBox Name="SizeWBox" Width="56" Height="22" LostFocus="TransformBox_LostFocus"/>
+                    <TextBlock Text="高" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="12,0,6,0"/>
+                    <TextBox Name="SizeHBox" Width="56" Height="22" LostFocus="TransformBox_LostFocus"/>
+                    <CheckBox Name="LockRatio" Content="约束比例" Foreground="{StaticResource Fg}" Margin="16,0,0,0" VerticalAlignment="Center" IsChecked="True"/>
+                </StackPanel>
+                <StackPanel Name="HeaderBrush" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Name="BrushTitle" Text="画笔" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock Text="大小" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Slider Name="BrushSlider" Width="140" Minimum="2" Maximum="400" Value="20" VerticalAlignment="Center"/>
+                    <TextBlock Text="硬度" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="16,0,8,0"/>
+                    <Slider Name="HardSlider" Width="100" Minimum="0" Maximum="1" Value="0.75" VerticalAlignment="Center"/>
+                    <TextBlock Text="不透明度" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="16,0,8,0"/>
+                    <Slider Name="PaintOpacity" Width="100" Minimum="0.05" Maximum="1" Value="1" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Name="HeaderSelect" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Name="SelectTitle" Text="矩形选框" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock Text="新建 · Shift 相加 · Alt 相减 · Delete 清除 · Ctrl+D 取消选择" Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Name="HeaderType" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="文字" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock Text="字体" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox Name="FontCombo" Width="160" Height="24"/>
+                    <TextBlock Text="大小" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="12,0,8,0"/>
+                    <TextBox Name="FontSizeBox" Width="48" Height="22" Text="48"/>
+                </StackPanel>
+                <StackPanel Name="HeaderCrop" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="裁剪" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock Text="拖动裁剪 · Enter 应用 · Esc 取消" Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Name="HeaderNav" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Name="NavTitle" Text="抓手" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock Text="缩放" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox Name="ZoomBox" Width="64" Height="22" Text="100" LostFocus="ZoomBox_LostFocus"/>
+                    <TextBlock Text="%" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                </StackPanel>
+                <StackPanel Name="HeaderIdle" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="选择一个工具" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Height="30" Background="{StaticResource Bg0}" BorderBrush="{StaticResource Hairline}" BorderThickness="0,1,0,0">
+            <Grid Margin="18,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Name="ZoomStatus" Width="62" Foreground="{StaticResource Muted}" Text="—"/>
+                    <TextBlock Name="SizeStatus" Foreground="{StaticResource Muted}" Margin="16,0,0,0" Text=""/>
+                    <TextBlock Foreground="{StaticResource Muted}" Margin="16,0,0,0" Text="sRGB · 透明"/>
+                </StackPanel>
+                <TextBlock Name="StatusText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{StaticResource Muted}"
+                           FontSize="11" Text="准备就绪"/>
+            </Grid>
+        </Border>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="252" MinWidth="202" MaxWidth="352" Name="LayersCol"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="{StaticResource Bg0}" BorderBrush="{StaticResource Hairline}" BorderThickness="0,0,1,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Name="ToolBar" Margin="18,16,18,12">
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Move" ToolTip="移动 / 变换 (V)" Click="Tool_Click" Content="✥"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Marquee" ToolTip="矩形选框 (M)" Click="Tool_Click" Content="▭"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Lasso" ToolTip="套索 (L)" Click="Tool_Click" Content="◠"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Wand" ToolTip="魔棒 (W)" Click="Tool_Click" Content="✦"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Crop" ToolTip="裁剪 (C)" Click="Tool_Click" Content="⌧"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Brush" ToolTip="画笔 (B) · 橡皮擦 (E)" Click="Tool_Click" Content="🖌"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Heal" ToolTip="污点修复画笔 (J)" Click="Tool_Click" Content="✚"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Clone" ToolTip="仿制图章 (S) · Alt+点击设置源" Click="Tool_Click" Content="◎"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Blur" ToolTip="涂抹 (R)" Click="Tool_Click" Content="◐"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Gradient" ToolTip="渐变 (G)" Click="Tool_Click" Content="▣"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Shape" ToolTip="形状 (U)" Click="Tool_Click" Content="◻"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Type" ToolTip="文字 (T)" Click="Tool_Click" Content="T"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Eyedropper" ToolTip="吸管 (I)" Click="Tool_Click" Content="I"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Hand" ToolTip="抓手 (H)" Click="Tool_Click" Content="✋"/>
+                        <Button Style="{StaticResource ToolRailButton}" Tag="Zoom" ToolTip="缩放 (Z)" Click="Tool_Click" Content="🔍"/>
+                        <Grid Margin="0,8,0,0" Width="64" Height="64" ToolTip="单击互换前景色 / 背景色">
+                            <Border Width="36" Height="36" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#FFFFFFFF" BorderBrush="#66FFFFFF" BorderThickness="1" MouseLeftButtonDown="SwapColors_Click" ToolTip="背景色 · 单击互换"/>
+                            <Border Name="FgSwatch" Width="36" Height="36" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#FF2D5BFF" BorderBrush="#AAFFFFFF" BorderThickness="1" Cursor="Hand" ToolTip="前景色"/>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Grid Grid.Column="1" Background="#FF242424">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Name="RulerCorner" Grid.Row="0" Grid.Column="0" Width="16" Height="16" Background="#FF2C2C2C" Visibility="Collapsed"/>
+                <Canvas Name="RulerH" Grid.Row="0" Grid.Column="1" Height="16" Background="#FF2C2C2C" Visibility="Collapsed"/>
+                <Canvas Name="RulerV" Grid.Row="1" Grid.Column="0" Width="16" Background="#FF2C2C2C" Visibility="Collapsed"/>
+                <ScrollViewer Name="CanvasScroll" Grid.Row="1" Grid.Column="1"
+                              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                              PreviewMouseWheel="Canvas_Wheel">
+                    <ScrollViewer.Background>
+                        <DrawingBrush TileMode="Tile" Viewport="0,0,16,16" ViewportUnits="Absolute">
+                            <DrawingBrush.Drawing>
+                                <DrawingGroup>
+                                    <GeometryDrawing Brush="#FF1C1C1C">
+                                        <GeometryDrawing.Geometry>
+                                            <RectangleGeometry Rect="0,0,16,16"/>
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                    <GeometryDrawing Brush="#FF2A2A2A">
+                                        <GeometryDrawing.Geometry>
+                                            <GeometryGroup>
+                                                <RectangleGeometry Rect="0,0,8,8"/>
+                                                <RectangleGeometry Rect="8,8,8,8"/>
+                                            </GeometryGroup>
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                </DrawingGroup>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </ScrollViewer.Background>
+                    <Grid Name="CanvasHost" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="48"
+                          MouseLeftButtonDown="Canvas_Down" MouseMove="Canvas_Move" MouseLeftButtonUp="Canvas_Up">
+                        <Image Name="CanvasImage" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                        <Canvas Name="Overlay" IsHitTestVisible="False"/>
+                    </Grid>
+                </ScrollViewer>
+                <Border Name="Welcome" Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Grid.ColumnSpan="2" Background="#E61C1C1C">
+                    <Border Width="400" Padding="36,32" CornerRadius="16" Background="#FF2A2A2A" BorderBrush="#28FFFFFF" BorderThickness="1"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <StackPanel>
+                            <TextBlock Text="CompositorWin" FontSize="28" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                            <TextBlock Text="面向 Windows 的图层编辑器" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,8,0,28"/>
+                            <TextBlock Text="画布尺寸" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,18">
+                                <TextBox Name="NewW" Width="88" Text="1920" Margin="0,0,8,0" HorizontalContentAlignment="Center"/>
+                                <TextBlock Text="×" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource Muted}"/>
+                                <TextBox Name="NewH" Width="88" Text="1080" HorizontalContentAlignment="Center"/>
+                            </StackPanel>
+                            <Button Style="{StaticResource AccentButton}" Content="新建画布" HorizontalAlignment="Stretch" Height="36" Click="WelcomeNew_Click" Margin="0,0,0,10"/>
+                            <Button Style="{StaticResource QuietButton}" Content="打开项目…" HorizontalAlignment="Stretch" Height="36" Click="Open_Click"/>
+                        </StackPanel>
+                    </Border>
+                </Border>
+            </Grid>
+
+            <Grid Grid.Column="2" Background="Transparent" Cursor="SizeWE" PreviewMouseLeftButtonDown="Splitter_Down" PreviewMouseMove="Splitter_Move" PreviewMouseLeftButtonUp="Splitter_Up">
+                <Rectangle Width="1" HorizontalAlignment="Center" Fill="{StaticResource Hairline}"/>
+            </Grid>
+
+            <Border Grid.Column="3" Background="{StaticResource Bg0}" BorderBrush="{StaticResource Hairline}" BorderThickness="1,0,0,0">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="16,16,16,12">
+                        <TextBlock Text="图层" FontSize="13" FontWeight="SemiBold"/>
+                        <TextBlock Name="LayerCount" DockPanel.Dock="Right" FontFamily="Consolas" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Text="0"/>
+                    </DockPanel>
+                    <Border DockPanel.Dock="Top" BorderBrush="{StaticResource Hairline}" BorderThickness="0,1,0,1" Padding="12">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,8">
+                                <TextBlock Text="混合" FontSize="11" Width="48" VerticalAlignment="Center" Foreground="{StaticResource Muted}"/>
+                                <ComboBox Name="BlendCombo" Height="24"/>
+                            </DockPanel>
+                            <DockPanel>
+                                <TextBlock Text="不透明度" FontSize="11" Width="56" VerticalAlignment="Center" Foreground="{StaticResource Muted}"/>
+                                <TextBox Name="OpacityPercent" DockPanel.Dock="Right" Width="40" Height="22" Text="100" LostFocus="OpacityPercent_LostFocus"/>
+                                <Slider Name="OpacitySlider" Minimum="0" Maximum="1" Value="1" Margin="6,0" VerticalAlignment="Center" ValueChanged="Opacity_Changed"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Hairline}" BorderThickness="0,1,0,0" Padding="8,4">
+                        <DockPanel>
+                            <Button Style="{StaticResource FooterIcon}" Content="＋" ToolTip="新建空白图层 (Ctrl+Shift+N)" Click="BlankLayer_Click"/>
+                            <Button Style="{StaticResource FooterIcon}" Content="📁" ToolTip="编组所选图层 (Ctrl+G)" Click="Group_Click"/>
+                            <Button Style="{StaticResource FooterIcon}" Content="◻" ToolTip="添加图层蒙版" Click="AddMask_Click"/>
+                            <Button Style="{StaticResource FooterIcon}" Content="✦" ToolTip="图层效果" Click="Shadow_Click"/>
+                            <Button Style="{StaticResource FooterIcon}" Content="◐" ToolTip="新建调整图层" Click="HueSat_Click"/>
+                            <Button Style="{StaticResource FooterIcon}" DockPanel.Dock="Right" HorizontalAlignment="Right" Content="🗑" ToolTip="删除所选图层" Click="DeleteLayer_Click"/>
+                            <TextBlock/>
+                        </DockPanel>
+                    </Border>
+                    <ListBox Name="LayerList" SelectionChanged="LayerList_SelectionChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel>
+                                    <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsVisible, Mode=TwoWay}" VerticalAlignment="Center" Click="Visibility_Click"/>
+                                    <Border DockPanel.Dock="Left" Width="36" Height="36" Margin="8,0,10,0" Background="#FF1A1A1A" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="4">
+                                        <Image Source="{Binding Thumb}" Stretch="Uniform"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

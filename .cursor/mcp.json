@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "compositorwin": {
+      "command": "D:\\projects\\CompositorWin\\scripts\\mcp.cmd"
+    }
+  }
+}
